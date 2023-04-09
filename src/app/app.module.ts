@@ -108,6 +108,7 @@ import { FileUploadModule } from 'primeng/fileupload';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { CarouselModule } from 'primeng/carousel';
 import { KnobModule } from 'primeng/knob';
+import { ChipModule } from 'primeng/chip';
 
 //Ngx Imports
 import { DragScrollModule } from 'ngx-drag-scroll';
@@ -194,6 +195,7 @@ registerLocaleData(localeFR);
     MatNativeDateModule,
     MatProgressSpinnerModule,
     FlexLayoutModule,
+    ChipModule,
     NgxMaskModule.forRoot(),
     JwtModule.forRoot({
       config:{

@@ -1,3 +1,4 @@
+import { Badge } from 'src/app/models/Badge';
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { BadgeService } from 'src/app/services/badge.service';
 import { MatTableDataSource } from '@angular/material/table';
@@ -12,41 +13,38 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 @Component({
   selector: 'app-listagem-badges',
   templateUrl: './listagem-badges.component.html',
-  styleUrls: ['./listagem-badges.component.css']
+  styleUrls: ['./listagem-badges.component.css'],
 })
 export class ListagemBadgesComponent implements OnInit {
-
   badges = new MatTableDataSource<any>();
+  badgesList: Badge[] = [];
   displayedColumns: string[];
 
   //Fitragem de cursos
   autoCompleteInput = new UntypedFormControl();
-  opcoesBadges : string[] = [];
-  descricaoBadges : Observable<string[]>;
-  
-  //Paginação da tabela
-  @ViewChild(MatPaginator, {static: true}) paginator : MatPaginator;
-  //Ordenação da tabela
-  @ViewChild(MatSort, {static: true}) sort: MatSort;
+  opcoesBadges: string[] = [];
+  descricaoBadges: Observable<string[]>;
 
-  constructor(
-    private badgeService: BadgeService, 
-    private dialog: MatDialog 
-    ) { }
+  //Paginação da tabela
+  @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
+  //Ordenação da tabela
+  @ViewChild(MatSort, { static: true }) sort: MatSort;
+
+  constructor(private badgeService: BadgeService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
-    this.badgeService.ObterTodos().subscribe(resultado => {
-        //para a busqueda
-        console.log(resultado);
-        resultado.forEach((badge) => {
-          this.opcoesBadges.push(badge.descricao);          
-        });
+    this.badgeService.ObterTodos().subscribe((resultado) => {
+      //para a busqueda
+      resultado.forEach((badge) => {
+        this.opcoesBadges.push(badge.descricao);
+      });
 
-        this.badges.data = resultado;
-        //para a paginação
-        this.badges.paginator = this.paginator;
-        //para a ordenação
-        this.badges.sort = this.sort;
+      this.badgesList = resultado;
+      this.badges.data = resultado;
+      //para a paginação
+      this.badges.paginator = this.paginator;
+      //para a ordenação
+      this.badges.sort = this.sort;
     });
 
     this.displayedColumns = this.ExibirColunas();
@@ -54,76 +52,69 @@ export class ListagemBadgesComponent implements OnInit {
     //pipe função para transformação de dados
     this.descricaoBadges = this.autoCompleteInput.valueChanges.pipe(
       startWith(''),
-      map((descricao) => this.FiltrarDescricao(descricao))
+      map((descricao) => this.FiltrarDescricao(descricao)),
     );
   }
 
-  ExibirColunas(): string[]{
-    return ['id', 'descricao', 'imagem', 'badgeNivel','acoes'];
+  ExibirColunas(): string[] {
+    return ['id', 'descricao', 'imagem', 'badgeNivel', 'acoes'];
+  }
+  onClick(e: any) {
+    this.FiltrarDescricao(e.target?.textContent);
   }
 
-  AbrirDialog(id : any, descricao: any): void 
-  {
-    this.dialog.open(DialogExclusaoBadgeComponent, {
-      data: {
-        id: id,
-        descricao: descricao
-      }
-    }).afterClosed().subscribe(resultado =>{
-      if(resultado === true){
-        this.badgeService.ObterTodos().subscribe(dados => {
-          this.badges.data = dados;
-        });
-        this.displayedColumns = this.ExibirColunas();
-      }
-    });
-  }
-
-  FiltrarDescricao(descricao: string): string[]
-  {
-    if(descricao.trim().length >= 4)
-    {
-      this.badgeService.FiltrarBadges(descricao.toLowerCase()).subscribe(resultado =>{
-        this.badges.data = resultado;
+  AbrirDialog(id: any, descricao: any): void {
+    this.dialog
+      .open(DialogExclusaoBadgeComponent, {
+        data: {
+          id: id,
+          descricao: descricao,
+        },
       })
-    } 
-    else
-    {
-      if (descricao === '')
-      {
-        this.badgeService.ObterTodos().subscribe(resultado => {
-          this.badges.data = resultado;
-        });
-      }
+      .afterClosed()
+      .subscribe((resultado) => {
+        if (resultado === true) {
+          this.badgeService.ObterTodos().subscribe((dados) => {
+            this.badges.data = dados;
+          });
+          this.displayedColumns = this.ExibirColunas();
+        }
+      });
+  }
+
+  FiltrarDescricao(descricao: string): any {
+    if (descricao === 'todas') {
+      this.badgeService.ObterTodos().subscribe((resultado) => {
+        this.badges.data = resultado;
+      });
+    } else {
+      this.badgeService.FiltrarBadges(descricao.toLowerCase()).subscribe((resultado) => {
+        this.badges.data = resultado;
+      });
     }
 
-    return this.opcoesBadges.filter(badge =>
-      badge.toLowerCase().includes(descricao.toLowerCase())
-    );
+    return this.opcoesBadges.filter((badge) => badge.toLowerCase().includes(descricao.toLowerCase()));
   }
-
 }
-
 
 @Component({
   selector: 'app-dialog-exclusao-badge',
-  templateUrl: './dialog-exclusao-badge.html'
+  templateUrl: './dialog-exclusao-badge.html',
 })
-export class DialogExclusaoBadgeComponent{
+export class DialogExclusaoBadgeComponent {
   constructor(
     @Inject(MAT_DIALOG_DATA) public dados: any,
     private badgeService: BadgeService,
-    private snackBar : MatSnackBar
-    ) { }
+    private snackBar: MatSnackBar,
+  ) {}
 
-  ExcluirBadge(id: any): void
-  {
+  ExcluirBadge(id: any): void {
     console.log(id);
-    this.badgeService.ExcluirBadge(id).subscribe(resultado => {
-      this.snackBar.open(resultado.mensagem, undefined, { 
-        duration: 2000, 
+    this.badgeService.ExcluirBadge(id).subscribe((resultado) => {
+      this.snackBar.open(resultado.mensagem, undefined, {
+        duration: 2000,
         horizontalPosition: 'right',
-        verticalPosition: 'top'        
+        verticalPosition: 'top',
       });
     });
   }
